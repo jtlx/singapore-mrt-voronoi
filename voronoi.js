@@ -1,4 +1,3 @@
-// https://chriszetter.com/blog/2014/06/15/building-a-voronoi-map-with-d3-and-leaflet/
 var points = [];
 var lines = [];
 var visiblePoints = [];
