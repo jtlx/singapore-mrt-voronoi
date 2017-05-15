@@ -6,16 +6,14 @@ var drawLayer;
 $.getJSON("./mrt_neat.json", function(data) {
     points = data['stops'];
     lines = data['lines'];
-    // console.log(points);
     $(document).ready(function() {
-        // var southWest = L.latLng(1.242538, 103.609314),
-        //     northEast = L.latLng(1.466322, 104.037781),
-        var southWest = L.latLng(1.273429, 103.686218),
-            northEast = L.latLng(1.438178, 103.967056),
-            startBounds = L.latLngBounds(southWest, northEast);
-            southWest = L.latLng(1.213019, 103.586655),
-            northEast = L.latLng(1.484168, 104.040527),
-            maxBounds = L.latLngBounds(southWest, northEast);
+        var southWest, northEast, startBounds, maxBounds;
+        southWest = L.latLng(1.273429, 103.686218),
+        northEast = L.latLng(1.438178, 103.967056),
+        startBounds = L.latLngBounds(southWest, northEast),
+        southWest = L.latLng(1.213019, 103.586655),
+        northEast = L.latLng(1.484168, 104.040527),
+        maxBounds = L.latLngBounds(southWest, northEast);
             
         map = L.map('mcmap', {
             crs: L.CRS.EPSG4326,
@@ -71,53 +69,55 @@ $.getJSON("./mrt_neat.json", function(data) {
                 return drawLimit.contains(latlng);
             });
 
-
-
     		removeDuplicates(visiblePoints);
 
+    		// create containers for MRT points and voronoi cells
             var svgPoints = svg.selectAll('g')
                 .data(visiblePoints)
                 .enter()
                 .append('g')
                 .attr('transform', 'translate(' + (-topLeft.x) + ',' + (-topLeft.y) + ')');
 
-                var transform = d3.geo.transform({point: function(y, x) {
+            var transform = d3.geo.transform({point: function(y, x) {
                   var point = map.latLngToLayerPoint(new L.LatLng(y, x));
                   this.stream.point(point.x, point.y);
-              }});
-                var path = d3.geo.path().projection(transform);
+            }});
 
-                var feature = svg.selectAll("path")
+            var path = d3.geo.path().projection(transform);
+
+            // draw lines for MRT tracks
+            var feature = svg.selectAll("path")
                 .data(lines)
                 .enter().append("path");
 
-                feature.attr("d", function(d) {
+            feature.attr("d", function(d) {
                     return path({"type":"Feature","geometry":{"type":"LineString","coordinates":d.points}});
-                    // return path({"type":"Feature","geometry":{"type":"Polygon","coordinates":[d.points]}});
                 })
                 .attr("fill", "none")
                 .attr("stroke", function(d) {
                     return d.colour;
                 })
                 .attr("stroke-width", "1.2")
-                .attr('transform', 'translate(' + (-topLeft.x) + ',' + (-topLeft.y) + ')');;
+                .attr('transform', 'translate(' + (-topLeft.x) + ',' + (-topLeft.y) + ')');
 
+            // draw circles for MRT stations
             svgPoints.append('circle')
                 .attr('transform', function(d) {  return "translate(" + d.pt.x + ", " + d.pt.y + ")"; }) // where d is an elem in filtered points
                 .attr('fill', 'white')
                 .attr('stroke', 'black')
                 .attr('stroke-width', '1.2')
                 .attr('r', function(e) { return map.getZoom()/5; });
-            // console.log(map.getZoom());
+
             // returns a voronoi function
             var voronoi = d3.geom.voronoi()
                 .x(function(d) {return d.pt.x}) // tell it how to extract x,y from each of the points we pass to it
                 .y(function(d) {return d.pt.y});
 
             var voronoiPolygons = voronoi(filteredPoints);
-            // console.log("voronoiPolygons = ", voronoiPolygons);
-            voronoiPolygons.forEach(function(polygon) { polygon.point.cell = polygon;  }); // TODO: understand
+            // create references to polygons in points
+            voronoiPolygons.forEach(function(polygon) { polygon.point.cell = polygon;  });
 
+            // draw voronoi cells
             var buildPathFromPoint = function(point) {
                 if(point.cell == undefined) console.log(point);
                 return "M" + point.cell.join("L") + "Z";
@@ -127,7 +127,6 @@ $.getJSON("./mrt_neat.json", function(data) {
                 .attr('fill', 'none')
                 .attr('stroke', '#777')
                 .attr('stroke-width', '0.7');
-
         }
         map.addLayer(mapLayer);
         drawLayer();
