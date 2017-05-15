@@ -40,13 +40,9 @@ $.getJSON("./mrt_neat.json", function(data) {
         lines.forEach(function(line) {
             line.points = polyline.decode(line.coords);
         });
-
-       
-
         
         // filtering and projecting
         drawLayer = function() {
-            // console.log("drawLayer called");
             bounds = map.getBounds();
             topLeft = map.latLngToLayerPoint(bounds.getNorthWest());	
 
@@ -61,38 +57,21 @@ $.getJSON("./mrt_neat.json", function(data) {
                 .style("margin-left", topLeft.x + "px")
                 .style("margin-top", topLeft.y + "px");
 
-            filteredPoints = points.filter(function(p) {
+            // view only MRTs
+            var filteredPoints = points.filter(function(p) {
                 return p.network.toLowerCase().includes("mrt");
             });
 
+            // render only points in view box
             visiblePoints = filteredPoints.filter(function(p) {
                 var drawLimit = bounds.pad(0.4);
-                var latlng = new L.LatLng(p.coord[0], p.coord[1]); // get latlng of the array elem
+                var latlng = new L.LatLng(p.coord[0], p.coord[1]);
                 p['latlng'] = latlng;
                 p['pt'] = map.latLngToLayerPoint(latlng);
-                return drawLimit.contains(latlng); // determine if the point is inside the drawing (visible area)
+                return drawLimit.contains(latlng);
             });
 
-    		// remove points with equal latlngs
-    		function contains(array,obj) {
-    			for(var i =0;i<array.length;i++) {
-    				if(isEqual(array[i],obj))return true;
-    			}
-    			return false;
-    		}
-    		//comparator
-    		function isEqual(obj1,obj2) {
-    			if(obj1.latlng.equals(obj2.latlng)) {
-                    return true;
-                }
-    			return false;
-    		}
-    		function removeDuplicates(ary) {
-    			var arr = [];
-    			return ary.filter(function(x) {
-    				return !contains(arr,x) && arr.push(x);
-    			});
-    		} 
+
 
     		removeDuplicates(visiblePoints);
 
