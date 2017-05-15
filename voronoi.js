@@ -9,12 +9,12 @@ $.getJSON("./mrt_neat.json", function(data) {
     $(document).ready(function() {
         var southWest, northEast, startBounds, maxBounds;
         southWest = L.latLng(1.273429, 103.686218),
-        northEast = L.latLng(1.438178, 103.967056),
-        startBounds = L.latLngBounds(southWest, northEast),
-        southWest = L.latLng(1.213019, 103.586655),
-        northEast = L.latLng(1.484168, 104.040527),
-        maxBounds = L.latLngBounds(southWest, northEast);
-            
+            northEast = L.latLng(1.438178, 103.967056),
+            startBounds = L.latLngBounds(southWest, northEast),
+            southWest = L.latLng(1.213019, 103.586655),
+            northEast = L.latLng(1.484168, 104.040527),
+            maxBounds = L.latLngBounds(southWest, northEast);
+
         map = L.map('mcmap', {
             crs: L.CRS.EPSG4326,
             maxBounds: maxBounds,
@@ -22,12 +22,12 @@ $.getJSON("./mrt_neat.json", function(data) {
         }).fitBounds(startBounds);
 
         L.tileLayer('http://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-                attribution: '',
-                maxZoom: 17
+            attribution: '',
+            maxZoom: 17
         }).addTo(map);
 
         var bounds = map.getBounds();
-        var topLeft = map.latLngToLayerPoint(bounds.getNorthWest());    
+        var topLeft = map.latLngToLayerPoint(bounds.getNorthWest());
         var mapLayer = {
             onAdd: function(map) { // called during map.addLayer(mapLayer);
                 map.on('viewreset moveend', drawLayer);
@@ -38,13 +38,14 @@ $.getJSON("./mrt_neat.json", function(data) {
         lines.forEach(function(line) {
             line.points = polyline.decode(line.coords);
         });
-        
+
         // filtering and projecting
         drawLayer = function() {
             bounds = map.getBounds();
-            topLeft = map.latLngToLayerPoint(bounds.getNorthWest());	
+            topLeft = map.latLngToLayerPoint(bounds.getNorthWest());
 
-            $("#overlay").remove(); // remove previous overlay before drawing
+            // remove old overlay
+            $("#overlay").remove();
 
             // create overlay
             var svg = d3.select(map.getPanes().overlayPane).append("svg")
@@ -69,19 +70,21 @@ $.getJSON("./mrt_neat.json", function(data) {
                 return drawLimit.contains(latlng);
             });
 
-    		removeDuplicates(visiblePoints);
+            removeDuplicates(visiblePoints);
 
-    		// create containers for MRT points and voronoi cells
+            // create containers for MRT points and voronoi cells
             var svgPoints = svg.selectAll('g')
                 .data(visiblePoints)
                 .enter()
                 .append('g')
                 .attr('transform', 'translate(' + (-topLeft.x) + ',' + (-topLeft.y) + ')');
 
-            var transform = d3.geo.transform({point: function(y, x) {
-                  var point = map.latLngToLayerPoint(new L.LatLng(y, x));
-                  this.stream.point(point.x, point.y);
-            }});
+            var transform = d3.geo.transform({
+                point: function(y, x) {
+                    var point = map.latLngToLayerPoint(new L.LatLng(y, x));
+                    this.stream.point(point.x, point.y);
+                }
+            });
 
             var path = d3.geo.path().projection(transform);
 
@@ -91,7 +94,7 @@ $.getJSON("./mrt_neat.json", function(data) {
                 .enter().append("path");
 
             feature.attr("d", function(d) {
-                    return path({"type":"Feature","geometry":{"type":"LineString","coordinates":d.points}});
+                    return path({"type": "Feature", "geometry": {"type": "LineString", "coordinates": d.points}});
                 })
                 .attr("fill", "none")
                 .attr("stroke", function(d) {
@@ -102,24 +105,35 @@ $.getJSON("./mrt_neat.json", function(data) {
 
             // draw circles for MRT stations
             svgPoints.append('circle')
-                .attr('transform', function(d) {  return "translate(" + d.pt.x + ", " + d.pt.y + ")"; }) // where d is an elem in filtered points
+                .attr('transform', function(d) {
+                    return "translate(" + d.pt.x + ", " + d.pt.y + ")";
+                })
                 .attr('fill', 'white')
                 .attr('stroke', 'black')
                 .attr('stroke-width', '1.2')
-                .attr('r', function(e) { return map.getZoom()/5; });
+                .attr('r', function(e) {
+                    return map.getZoom() / 5;
+                });
 
             // returns a voronoi function
             var voronoi = d3.geom.voronoi()
-                .x(function(d) {return d.pt.x}) // tell it how to extract x,y from each of the points we pass to it
-                .y(function(d) {return d.pt.y});
+                .x(function(d) {
+                    return d.pt.x
+                }) // tell it how to extract x,y from each of the points we pass to it
+                .y(function(d) {
+                    return d.pt.y
+                });
 
             var voronoiPolygons = voronoi(filteredPoints);
+
             // create references to polygons in points
-            voronoiPolygons.forEach(function(polygon) { polygon.point.cell = polygon;  });
+            voronoiPolygons.forEach(function(polygon) {
+                polygon.point.cell = polygon;
+            });
 
             // draw voronoi cells
             var buildPathFromPoint = function(point) {
-                if(point.cell == undefined) console.log(point);
+                if (point.cell == undefined) console.log(point);
                 return "M" + point.cell.join("L") + "Z";
             }
             svgPoints.append("path")
