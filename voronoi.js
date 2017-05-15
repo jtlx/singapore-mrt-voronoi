@@ -12,14 +12,21 @@ $.getJSON("./mrt_neat.json", function(data) {
         //     northEast = L.latLng(1.466322, 104.037781),
         var southWest = L.latLng(1.273429, 103.686218),
             northEast = L.latLng(1.438178, 103.967056),
-            bounds = L.latLngBounds(southWest, northEast);
-        map = L.map('mcmap', {crs: L.CRS.EPSG4326}).fitBounds(bounds);
+            startBounds = L.latLngBounds(southWest, northEast);
+            southWest = L.latLng(1.213019, 103.586655),
+            northEast = L.latLng(1.484168, 104.040527),
+            maxBounds = L.latLngBounds(southWest, northEast);
+            
+        map = L.map('mcmap', {
+            crs: L.CRS.EPSG4326,
+            maxBounds: maxBounds,
+            maxBoundsViscosity: 1.0
+        }).fitBounds(startBounds);
 
-        // L.tileLayer('http://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
         L.tileLayer('http://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
                 attribution: '',
-                maxZoom: 17,
-                }).addTo(map);
+                maxZoom: 17
+        }).addTo(map);
 
         var bounds = map.getBounds();
         var topLeft = map.latLngToLayerPoint(bounds.getNorthWest());    
@@ -120,8 +127,8 @@ $.getJSON("./mrt_neat.json", function(data) {
                 .attr('transform', function(d) {  return "translate(" + d.pt.x + ", " + d.pt.y + ")"; }) // where d is an elem in filtered points
                 .attr('fill', 'white')
                 .attr('stroke', 'black')
-                .attr('stroke-width', '1.5')
-                .attr('r', function(e) { return map.getZoom()/4; });
+                .attr('stroke-width', '1.2')
+                .attr('r', function(e) { return map.getZoom()/5; });
             // console.log(map.getZoom());
             // returns a voronoi function
             var voronoi = d3.geom.voronoi()
